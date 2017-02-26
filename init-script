@@ -26,7 +26,7 @@ echo "Running Mer Boat Loader"
 
 BOOTLOGO=%BOOTLOGO%
 ALWAYSDEBUG=%ALWAYSDEBUG%
-DATA_PARTITION=%DATA_PART%
+DATA_PARTITION=/dev/mmcblk1p1
 DEFAULT_OS=%DEFAULT_OS%
 
 set_welcome_msg(){
@@ -139,15 +139,13 @@ bootsplash() {
 mount_stowaways() {
     echo "########################## mounting stowaways"
     if [ ! -z $DATA_PARTITION ]; then
-        data_subdir="$(get_opt data_subdir)"
-
-	mkdir /data
+	mkdir /mmc
 	mkdir /target
 
-	mount $DATA_PARTITION /data
-	mount --bind /data/${data_subdir}/.stowaways/${DEFAULT_OS} /target
-	mkdir /target/data # in new fs
-	mount --bind /data/${data_subdir} /target/data
+	mount $DATA_PARTITION /mmc
+	mount -o loop /mmc/Jolla.img /target
+	mkdir /target/mmc # in new fs
+	mount --bind /mmc /target/mmc
     else
         echo "Failed to mount /target, device node '$DATA_PARTITION' not found!" >> /diagnosis.log
     fi
@@ -156,9 +154,9 @@ mount_stowaways() {
 
 umount_stowaways() {
     if [ ! -z $DATA_PARTITION ]; then
-	umount /target/data
+	umount /target/mmc
 	umount /target
-	umount /data
+	umount /mmc
     fi
 }
 
@@ -313,13 +311,6 @@ if [ "$DONE_SWITCH" = "no" ]; then
     [ -f /target/init_enter_debug ] && DBG_REASON="/init_enter_debug exists"
 
     if ! [ "$DBG_REASON" = "" ] ; then
-	# During debug we export mmc too (some variations in location here)
-	lun=/sys/class/android_usb/f_mass_storage/lun/file
-	if [ -f $lun ]; then echo /dev/mmcblk0 > $lun; fi
-	lun=/sys/class/android_usb/f_mass_storage/lun0/file
-	if [ -f $lun ]; then echo /dev/mmcblk0 > $lun; fi
-	USB_FUNCTIONS=rndis,mass_storage
-
 	run_debug_session $DBG_REASON
 
 	# Tidy up before we switch_root (rootfs init-debug leaves these running during bootup)
