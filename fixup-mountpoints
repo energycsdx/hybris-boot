@@ -114,18 +114,7 @@ case "$DEVICE" in
             "$@"
         ;;
     *)
-	cat <<EOF
-
-****************************************************************
-****************************************************************
-ERROR: $DEVICE does not have mountpoint fixup data - see
-       SailfishOS HADK for details on how to fix this
-       Check: device/$VENDOR/$DEVICE/recovery.fstab
-****************************************************************
-****************************************************************
-
-EOF
-        exit 1
+        exit 0
         ;;
 esac
 
